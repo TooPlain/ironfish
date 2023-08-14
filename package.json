@@ -8,6 +8,7 @@
   "workspaces": [
     "ironfish-cli",
     "config/eslint-config-ironfish-react",
+    "config/react",
     "config/eslint-config-ironfish",
     "config/eslint-plugin-ironfish",
     "ironfish",
