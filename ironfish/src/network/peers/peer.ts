@@ -142,6 +142,9 @@ export class Peer {
    */
   features: Features | null = null
 
+  rttStart: number | null = null
+  rtt: number = Number.MAX_SAFE_INTEGER
+
   /**
    * The loggable name of the peer. For a more specific value,
    * try Peer.name or Peer.state.identity.
@@ -484,6 +487,10 @@ export class Peer {
    * @param message The message to send.
    */
   send(message: NetworkMessage): Connection | null {
+    if (message.type === NetworkMessageType.PeerListRequest) {
+      this.rttStart = new Date().getTime()
+    }
+
     // Return early if peer is not in state CONNECTED
     if (this.state.type !== 'CONNECTED') {
       this.logger.debug(
@@ -729,5 +736,18 @@ export class Peer {
     if (forceLogMessage || !UNLOGGED_MESSAGE_TYPES.includes(message.type)) {
       this.loggedMessages.push(loggedMessage)
     }
+  }
+
+  setRtt(peerCount: number): void {
+    if (!this.rttStart) {
+      console.log('!!!! rttStart not set')
+      return
+    }
+
+    const now = new Date().getTime()
+    console.log(`peerCount: ${peerCount}, base rtt: ${now - this.rttStart}`)
+
+    // this.rtt = (now - this.rttStart) / peerCount
+    this.rtt = now - this.rttStart
   }
 }

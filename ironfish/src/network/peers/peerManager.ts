@@ -585,6 +585,17 @@ export class PeerManager {
     })
   }
 
+  getFastestPeer(work: bigint): Peer | undefined {
+    const peers = this.getConnectedPeers().filter(
+      (peer) => peer.features?.syncing && peer.work && peer.work > work,
+    )
+    const p = peers.sort((a, b) => {
+      return a.rtt - b.rtt
+    })[0]
+    console.log('fastest peer rtt', p ? p.rtt : 'UNDEFINED')
+    return p
+  }
+
   /**
    * Returns true if the total number of connected peers is less
    * than the target amount of peers
@@ -807,6 +818,7 @@ export class PeerManager {
     const peerListRequest = new PeerListRequestMessage()
 
     for (const peer of this.getConnectedPeers()) {
+      console.log(peer.getIdentityOrThrow(), peer.rtt)
       peer.send(peerListRequest)
     }
   }
@@ -1520,6 +1532,8 @@ export class PeerManager {
   }
 
   private handlePeerListMessage(peerList: PeerListMessage, peer: Peer) {
+    peer.setRtt(peerList.connectedPeers.length)
+
     if (peer.state.type !== 'CONNECTED') {
       this.logger.warn('Should not handle the peer list message unless peer is connected')
       return
