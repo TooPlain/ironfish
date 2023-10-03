@@ -24,14 +24,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Push version string to mainnet API
-        if: ${{ inputs.push_mainnet }}
         run: ./ironfish-cli/scripts/push-version.sh
         env:
           IRON_FISH_API_KEY: ${{ secrets.IRON_FISH_API_KEY }}
           IRON_FISH_API_URL: ${{ secrets.IRON_FISH_API_URL }}
 
       - name: Push version string to testnet API
-        if: ${{ inputs.push_testnet }}
         run: ./ironfish-cli/scripts/push-version.sh
         env:
           IRON_FISH_API_KEY: ${{ secrets.IRON_FISH_API_KEY_TESTNET }}
