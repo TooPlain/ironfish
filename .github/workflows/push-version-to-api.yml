@@ -1,5 +1,8 @@
 name: Push new version number to API
 on:
+  push:
+    branches:
+      - test-push-version-to-api
   workflow_dispatch:
     inputs:
       push_mainnet:

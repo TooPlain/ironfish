@@ -14,6 +14,7 @@ if ! command -v curl &> /dev/null; then
 fi
 
 VERSION="$(jq -r '.version' ironfish-cli/package.json)"
+echo $VERSION
 STATUS="$(curl \
     --write-out '%{http_code}' \
     --silent \
