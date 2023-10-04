@@ -84,7 +84,8 @@ export class PeerConnectionManager {
 
     let connectAttempts = 0
 
-    for (const peerCandidateIdentity of this.peerManager.peerCandidates.shufflePeerCandidates()) {
+    // for (const peerCandidateIdentity of this.peerManager.peerCandidates.shufflePeerCandidates()) {
+    for (const peerCandidateIdentity of this.peerManager.peerCandidates.semiSortedPeerCandidates()) {
       if (connectAttempts >= CONNECT_ATTEMPTS_MAX) {
         break
       }
@@ -97,6 +98,10 @@ export class PeerConnectionManager {
           peer.setWebSocketAddress(val.address, val.port)
           if (this.connectToEligiblePeers(peer)) {
             connectAttempts++
+            this.peerManager.peerCandidates.connectionAttempted(
+              peerCandidateIdentity,
+              new Date().getTime(),
+            )
           } else {
             this.peerManager.tryDisposePeer(peer)
           }

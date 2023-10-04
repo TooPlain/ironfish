@@ -1500,6 +1500,15 @@ export class PeerManager {
   }
 
   private handlePeerListRequestMessage(peer: Peer) {
+    let neighborsSize = 0
+    for (const p of this.peerCandidates.shufflePeerCandidates()) {
+      const pc = this.peerCandidates.get(p)
+      neighborsSize += pc?.neighbors.size ?? 0
+    }
+
+    console.log(
+      `----- PeerListRequest rcvd. Peers: ${this.peers.length} Identified Peers: ${this.identifiedPeers.size}. Peer Candidates: ${this.peerCandidates.size}. Neighbors: ${neighborsSize}`,
+    )
     const connectedPeers = []
 
     for (const p of this.identifiedPeers.values()) {

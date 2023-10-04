@@ -11,6 +11,7 @@ export type PeerCandidate = {
   name?: string
   address: string | null
   port: number | null
+  lastAttempt: number
   neighbors: Set<Identity>
   webRtcRetry: ConnectionRetry
   websocketRetry: ConnectionRetry
@@ -44,6 +45,7 @@ export class PeerCandidates {
       websocketRetry: new ConnectionRetry(peer.isWhitelisted),
       localRequestedDisconnectUntil: null,
       peerRequestedDisconnectUntil: null,
+      lastAttempt: 0,
     }
 
     if (peer.state.identity !== null) {
@@ -74,6 +76,26 @@ export class PeerCandidates {
 
   shufflePeerCandidates(): string[] {
     return ArrayUtils.shuffle([...this.map.keys()])
+  }
+
+  connectionAttempted(identity: string, time: number): void {
+    const candidate = this.map.get(identity)
+    if (!candidate) {
+      return
+    }
+
+    console.log(`Attempted ${identity}. LastAttempt: ${candidate.lastAttempt}. Now: ${time}`)
+    candidate.lastAttempt = time
+  }
+
+  semiSortedPeerCandidates(): string[] {
+    return [...this.map.entries()]
+      .sort((a, b) => {
+        return a[1].lastAttempt - b[1].lastAttempt
+      })
+      .map(([identity, _]) => {
+        return identity
+      })
   }
 
   get(identity: Identity): PeerCandidate | undefined {
