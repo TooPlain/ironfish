@@ -134,11 +134,13 @@ export abstract class IronfishCommand extends Command {
     const rpcTcpHostFlag = getFlag(flags, RpcTcpHostFlagKey)
     if (typeof rpcTcpHostFlag === 'string') {
       configOverrides.rpcTcpHost = rpcTcpHostFlag
+      configOverrides.enableRpcTcp = true
     }
 
     const rpcTcpPortFlag = getFlag(flags, RpcTcpPortFlagKey)
     if (typeof rpcTcpPortFlag === 'number') {
       configOverrides.rpcTcpPort = rpcTcpPortFlag
+      configOverrides.enableRpcTcp = true
     }
 
     const rpcConnectHttpFlag = getFlag(flags, RpcUseHttpFlagKey)
