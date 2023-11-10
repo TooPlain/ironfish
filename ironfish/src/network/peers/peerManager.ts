@@ -294,6 +294,10 @@ export class PeerManager {
     }
 
     const brokeringPeer = brokeringPeers[0]
+    console.log(
+      'DID PEER HAVE THIS NEIGHBOR? 111',
+      brokeringPeer.neighbors.has(peer.state.identity),
+    )
     brokeringPeer.send(signal)
 
     return true
@@ -386,6 +390,12 @@ export class PeerManager {
         })
 
         // If sending the message failed, try again (the brokeringPeer's state may have changed)
+        console.log(
+          'DID PEER HAVE THIS NEIGHBOR? 222',
+          peer.state.identity
+            ? brokeringPeer.neighbors.has(peer.state.identity)
+            : 'UNIDENTIFIED',
+        )
         const sendResult = brokeringPeer.send(signal)
 
         if (sendResult !== null) {
@@ -1460,5 +1470,7 @@ export class PeerManager {
         wsAddress,
       })
     }
+
+    peer.updateNeighbors(peerList.connectedPeers)
   }
 }

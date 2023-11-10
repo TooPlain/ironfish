@@ -13,6 +13,7 @@ import { Identity } from '../identity'
 import { NetworkMessage } from '../messages/networkMessage'
 import { NetworkMessageType } from '../types'
 import { WebSocketAddress } from '../utils'
+import { Peer as PeerListPeer } from './../messages/peerList'
 import { NetworkError, WebRtcConnection, WebSocketConnection } from './connections'
 import { Connection, ConnectionType } from './connections/connection'
 import { Features } from './peerFeatures'
@@ -218,6 +219,15 @@ export class Peer {
    */
   readonly onStateChanged: Event<[{ peer: Peer; state: PeerState; prevState: PeerState }]> =
     new Event()
+
+  neighbors = new Set<Identity>()
+  updateNeighbors(peers: PeerListPeer[]): void {
+    const newNeighbors = new Set<Identity>()
+    for (const p of peers) {
+      newNeighbors.add(p.identity.toString('base64'))
+    }
+    this.neighbors = newNeighbors
+  }
 
   constructor(
     identity: Identity | null,
@@ -575,6 +585,7 @@ export class Peer {
           }
 
           this.removeConnection(connection)
+          this.neighbors.clear()
           return
         }
 
