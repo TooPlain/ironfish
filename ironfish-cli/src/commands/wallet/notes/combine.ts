@@ -15,12 +15,12 @@ import { CliUx, Flags } from '@oclif/core'
 import inquirer from 'inquirer'
 import { IronfishCommand } from '../../../command'
 import { IronFlag, RemoteFlags } from '../../../flags'
-import { ProgressBar } from '../../../types'
 import { selectFee } from '../../../utils/fees'
 import { fetchSortedNotes } from '../../../utils/notes'
 import {
   displayTransactionSummary,
   getSpendPostTimeInMs,
+  TransactionTimer,
   watchTransaction,
 } from '../../../utils/transaction'
 
@@ -316,6 +316,7 @@ export class CombineNotesCommand extends IronfishCommand {
         hideMilliseconds: true,
       })}`,
     )
+
     if (!flags.confirm) {
       const confirmed = await CliUx.ux.confirm('Do you confirm (Y/N)?')
       if (!confirmed) {
@@ -323,26 +324,8 @@ export class CombineNotesCommand extends IronfishCommand {
       }
     }
 
-    const progressBar = CliUx.ux.progress({
-      format: '{title}: [{bar}] {percentage}% | {estimate}',
-    }) as ProgressBar
-
-    const startTime = Date.now()
-
-    progressBar.start(100, 0, {
-      title: 'Sending the transaction',
-      estimate: TimeUtils.renderSpan(estimateInMs, { hideMilliseconds: true }),
-    })
-
-    const timer = setInterval(() => {
-      const durationInMs = Date.now() - startTime
-      const timeRemaining = estimateInMs - durationInMs
-      const progress = Math.round((durationInMs / estimateInMs) * 100)
-
-      progressBar.update(progress, {
-        estimate: TimeUtils.renderSpan(timeRemaining, { hideMilliseconds: true }),
-      })
-    }, 1000)
+    const transactionTimer = new TransactionTimer(estimateInMs)
+    transactionTimer.start()
 
     const response = await client.wallet.postTransaction({
       transaction: RawTransactionSerde.serialize(raw).toString('hex'),
@@ -352,12 +335,10 @@ export class CombineNotesCommand extends IronfishCommand {
     const bytes = Buffer.from(response.content.transaction, 'hex')
     const transaction = new Transaction(bytes)
 
-    clearInterval(timer)
-    progressBar.update(100)
-    progressBar.stop()
+    transactionTimer.stop()
 
     this.log(
-      `Sending took ${TimeUtils.renderSpan(Date.now() - startTime, {
+      `Sending took ${TimeUtils.renderSpan(Date.now() - transactionTimer.startTime, {
         hideMilliseconds: true,
       })}`,
     )
