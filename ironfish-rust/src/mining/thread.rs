@@ -3,9 +3,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use std::{
     collections::VecDeque,
-    sync::mpsc::{self, Receiver, SendError, Sender},
+    sync::{
+        mpsc::{self, Receiver, SendError, Sender},
+        Arc, Mutex,
+    },
     thread,
 };
+
+use fish_hash::Context;
 
 use super::mine;
 
@@ -22,9 +27,11 @@ pub(crate) enum Command {
 
 pub(crate) struct Thread {
     command_channel: Sender<Command>,
+    // context: Arc<Mutex<Context>>,
 }
 impl Thread {
     pub(crate) fn new(
+        context: Arc<Mutex<Context>>,
         id: u64,
         block_found_channel: Sender<(u64, u32)>,
         hash_rate_channel: Sender<u32>,
@@ -38,6 +45,7 @@ impl Thread {
             .name(id.to_string())
             .spawn(move || {
                 process_commands(
+                    context.clone(),
                     work_receiver,
                     block_found_channel,
                     hash_rate_channel,
@@ -50,6 +58,7 @@ impl Thread {
             .unwrap();
 
         Thread {
+            // context,
             command_channel: work_sender,
         }
     }
@@ -74,6 +83,7 @@ impl Thread {
 }
 
 fn process_commands(
+    context: Arc<Mutex<Context>>,
     work_receiver: Receiver<Command>,
     block_found_channel: Sender<(u64, u32)>,
     hash_rate_channel: Sender<u32>,
@@ -102,6 +112,7 @@ fn process_commands(
                         remaining_search_space
                     };
                     let match_found = mine::mine_batch(
+                        context.clone(),
                         &mut header_bytes,
                         &target,
                         batch_start,

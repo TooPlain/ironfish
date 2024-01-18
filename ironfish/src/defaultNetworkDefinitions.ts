@@ -79,6 +79,6 @@ export const DEVNET = `
         "minFee": 0,
         "enableAssetOwnership": 1,
         "enforceSequentialBlockTime": 1,
-        "enableFishHash": "never"
+        "enableFishHash": "1"
     }
 }`

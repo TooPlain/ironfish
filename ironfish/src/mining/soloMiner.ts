@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-import { ThreadPoolHandler } from '@ironfish/rust-nodejs'
+import { FishHashContext, ThreadPoolHandler } from '@ironfish/rust-nodejs'
 import { blake3 } from '@napi-rs/blake-hash'
 import { Assert } from '../assert'
 import { Logger } from '../logger'
@@ -38,6 +38,8 @@ export class MiningSoloMiner {
   private currentHeadTimestamp: number | null
   private currentHeadDifficulty: bigint | null
 
+  private fishHashContext: FishHashContext
+
   graffiti: Buffer
   target: Buffer
   waiting: boolean
@@ -65,6 +67,8 @@ export class MiningSoloMiner {
 
     this.currentHeadTimestamp = null
     this.currentHeadDifficulty = null
+
+    this.fishHashContext = new FishHashContext(false)
 
     this.hashRate = new Meter()
     this.stopPromise = null
@@ -129,7 +133,7 @@ export class MiningSoloMiner {
     )
 
     const headerBytes = Buffer.concat([header])
-    headerBytes.set(this.graffiti, MINEABLE_BLOCK_HEADER_GRAFFITI_OFFSET)
+    headerBytes.set(this.graffiti, 0)
 
     this.waiting = false
     this.threadPool.newWork(headerBytes, this.target, miningRequestId)
@@ -216,7 +220,8 @@ export class MiningSoloMiner {
     blockTemplate.header.randomness = randomness
 
     const headerBytes = mineableHeaderString(blockTemplate.header)
-    const hashedHeader = blake3(headerBytes)
+    // const hashedHeader = blake3(headerBytes)
+    const hashedHeader = this.fishHashContext.hash(headerBytes)
 
     if (hashedHeader.compare(Buffer.from(blockTemplate.header.target, 'hex')) !== 1) {
       this.logger.debug('Valid block, submitting to node')

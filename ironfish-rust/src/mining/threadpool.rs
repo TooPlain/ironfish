@@ -1,7 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use std::sync::mpsc::{self, Receiver};
+use std::sync::{
+    mpsc::{self, Receiver},
+    Arc, Mutex,
+};
+
+use fish_hash::Context;
 
 use super::thread::Thread;
 
@@ -17,9 +22,14 @@ impl ThreadPool {
 
         let (hash_rate_channel, hash_rate_receiver) = mpsc::channel::<u32>();
 
+        let c = Context::new(true);
+        // c.prebuild_dataset(8);
+        let context = Arc::new(Mutex::new(c));
+
         let mut threads = Vec::with_capacity(thread_count);
         for id in 0..thread_count {
             threads.push(Thread::new(
+                context.clone(),
                 id as u64,
                 block_found_channel.clone(),
                 hash_rate_channel.clone(),
