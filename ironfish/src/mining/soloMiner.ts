@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-import { ThreadPoolHandler } from '@ironfish/rust-nodejs'
+import { FishHashContext, ThreadPoolHandler } from '@ironfish/rust-nodejs'
 import { blake3 } from '@napi-rs/blake-hash'
 import { Assert } from '../assert'
 import { Logger } from '../logger'
@@ -14,7 +14,11 @@ import { ErrorUtils } from '../utils/error'
 import { FileUtils } from '../utils/file'
 import { PromiseUtils } from '../utils/promise'
 import { SetTimeoutToken } from '../utils/types'
-import { MINEABLE_BLOCK_HEADER_GRAFFITI_OFFSET, mineableHeaderString } from './utils'
+import {
+  MINEABLE_BLOCK_HEADER_GRAFFITI_OFFSET,
+  mineableHeaderStringBlake3,
+  mineableHeaderStringFishHash,
+} from './utils'
 
 const RECALCULATE_TARGET_TIMEOUT = 10000
 
@@ -37,6 +41,9 @@ export class MiningSoloMiner {
 
   private currentHeadTimestamp: number | null
   private currentHeadDifficulty: bigint | null
+
+  private fishHashContext: FishHashContext
+  private enableFishHashSequence: number | null = null
 
   graffiti: Buffer
   target: Buffer
@@ -65,6 +72,9 @@ export class MiningSoloMiner {
 
     this.currentHeadTimestamp = null
     this.currentHeadDifficulty = null
+
+    // TODO: Handle full context
+    this.fishHashContext = new FishHashContext(false)
 
     this.hashRate = new Meter()
     this.stopPromise = null
@@ -149,6 +159,7 @@ export class MiningSoloMiner {
 
   private async processNewBlocks() {
     const consensusParameters = (await this.rpc.chain.getConsensusParameters()).content
+    this.enableFishHashSequence = consensusParameters.enableFishHash
 
     for await (const payload of this.rpc.miner.blockTemplateStream().contentStream()) {
       Assert.isNotUndefined(payload.previousBlockInfo)
@@ -175,7 +186,13 @@ export class MiningSoloMiner {
 
     this.target = Buffer.from(block.header.target, 'hex')
 
-    const work = mineableHeaderString(block.header)
+    let work
+    if (this.enableFishHashSequence && block.header.sequence >= this.enableFishHashSequence) {
+      work = mineableHeaderStringFishHash(block.header)
+    } else {
+      work = mineableHeaderStringBlake3(block.header)
+    }
+
     this.newWork(miningRequestId, work)
   }
 
@@ -215,8 +232,18 @@ export class MiningSoloMiner {
     blockTemplate.header.graffiti = graffiti.toString('hex')
     blockTemplate.header.randomness = randomness
 
-    const headerBytes = mineableHeaderString(blockTemplate.header)
-    const hashedHeader = blake3(headerBytes)
+    let headerBytes
+    let hashedHeader
+    if (
+      this.enableFishHashSequence &&
+      blockTemplate.header.sequence >= this.enableFishHashSequence
+    ) {
+      headerBytes = mineableHeaderStringFishHash(blockTemplate.header)
+      hashedHeader = this.fishHashContext.hash(headerBytes)
+    } else {
+      headerBytes = mineableHeaderStringBlake3(blockTemplate.header)
+      hashedHeader = blake3(headerBytes)
+    }
 
     if (hashedHeader.compare(Buffer.from(blockTemplate.header.target, 'hex')) !== 1) {
       this.logger.debug('Valid block, submitting to node')

@@ -12,7 +12,7 @@ import { ErrorUtils } from '../../utils/error'
 import { YupUtils } from '../../utils/yup'
 import { isValidPublicAddress } from '../../wallet/validator'
 import { MiningPool } from '../pool'
-import { mineableHeaderString } from '../utils'
+import { mineableHeaderStringBlake3 } from '../utils'
 import { IStratumAdapter } from './adapters'
 import { DisconnectReason } from './constants'
 import { ClientMessageMalformedError } from './errors'
@@ -130,7 +130,7 @@ export class StratumServer {
 
   newWork(miningRequestId: number, block: SerializedBlockTemplate): void {
     this.currentMiningRequestId = miningRequestId
-    this.currentWork = mineableHeaderString(block.header)
+    this.currentWork = mineableHeaderStringBlake3(block.header)
 
     this.logger.info(
       `Setting work for request: ${this.currentMiningRequestId} ${this.currentWork

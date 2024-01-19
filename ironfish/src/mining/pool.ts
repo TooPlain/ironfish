@@ -21,7 +21,7 @@ import { StratumTcpAdapter, StratumTlsAdapter } from './stratum/adapters'
 import { MiningStatusMessage } from './stratum/messages'
 import { StratumServer } from './stratum/stratumServer'
 import { StratumServerClient } from './stratum/stratumServerClient'
-import { mineableHeaderString } from './utils'
+import { mineableHeaderStringBlake3 } from './utils'
 import { Explorer, WebhookNotifier } from './webhooks'
 
 const RECALCULATE_TARGET_TIMEOUT = 10000
@@ -292,7 +292,7 @@ export class MiningPool {
 
     let headerBytes
     try {
-      headerBytes = mineableHeaderString(blockTemplate.header)
+      headerBytes = mineableHeaderStringBlake3(blockTemplate.header)
     } catch (error) {
       this.stratum.peers.punish(client, `${client.id} sent malformed work.`)
       return
