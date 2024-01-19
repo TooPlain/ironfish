@@ -127,6 +127,11 @@ export class WalletDB {
     value: null
   }>
 
+  participantIdentifiers: IDatabaseStore<{
+    key: [Account['prefix'], string]
+    value: null
+  }>
+
   cacheStores: Array<IDatabaseStore<DatabaseSchema>>
 
   constructor({
@@ -269,6 +274,16 @@ export class WalletDB {
           ),
           32,
         ),
+        4,
+      ),
+      valueEncoding: NULL_ENCODING,
+    })
+
+    this.participantIdentifiers = this.db.addStore({
+      name: 'pa',
+      keyEncoding: new PrefixEncoding(
+        new BufferEncoding(), // account prefix
+        new StringEncoding(), // participant identifier
         4,
       ),
       valueEncoding: NULL_ENCODING,
@@ -1203,5 +1218,33 @@ export class WalletDB {
     tx?: IDatabaseTransaction,
   ): Promise<void> {
     await this.nullifierToTransactionHash.del([account.prefix, nullifier], tx)
+  }
+
+  async addParticipantIdentifier(
+    account: Account,
+    identifier: string,
+    tx?: IDatabaseTransaction,
+  ): Promise<void> {
+    await this.participantIdentifiers.put([account.prefix, identifier], null, tx)
+  }
+
+  async deleteParticipantIdentifier(
+    account: Account,
+    identifier: string,
+    tx?: IDatabaseTransaction,
+  ): Promise<void> {
+    await this.participantIdentifiers.del([account.prefix, identifier], tx)
+  }
+
+  async *getParticipantIdentifiers(
+    account: Account,
+    tx?: IDatabaseTransaction,
+  ): AsyncGenerator<string> {
+    for await (const [_, identifier] of this.participantIdentifiers.getAllKeysIter(
+      tx,
+      account.prefixRange,
+    )) {
+      yield identifier
+    }
   }
 }
