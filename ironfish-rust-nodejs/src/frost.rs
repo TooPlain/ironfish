@@ -6,13 +6,15 @@ use ironfish::{
     frost::{
         keys::KeyPackage,
         round2::{Randomizer, SignatureShare},
-        SigningPackage,
+        Identifier, SigningPackage,
     },
     frost_utils::{round_one::round_one as round_one_rust, round_two::round_two as round_two_rust},
+    participant::{Identity, Secret, IDENTITY_LEN},
     serializing::{bytes_to_hex, hex_to_bytes, hex_to_vec_bytes},
 };
-use napi::bindgen_prelude::*;
+use napi::{bindgen_prelude::*, JsBuffer};
 use napi_derive::napi;
+use rand::thread_rng;
 
 use crate::to_napi_err;
 
@@ -54,4 +56,78 @@ pub fn round_two(
         Randomizer::deserialize(&hex_to_bytes(&public_key_randomness).map_err(to_napi_err)?)
             .map_err(to_napi_err)?;
     round_two_rust(signing_package, key_package, randomizer, seed).map_err(to_napi_err)
+}
+
+#[napi(js_name = "FrostSecret")]
+pub struct NativeFrostSecret {
+    secret: Secret,
+}
+
+#[napi]
+impl NativeFrostSecret {
+    // TODO(hughy): implement Secret deserialization
+    #[napi(constructor)]
+    pub fn random() -> NativeFrostSecret {
+        let secret = Secret::random(thread_rng());
+
+        NativeFrostSecret { secret }
+    }
+
+    #[napi]
+    pub fn to_identity(&self) -> Result<NativeFrostIdentity> {
+        let identity = self.secret.to_identity();
+
+        Ok(NativeFrostIdentity { identity })
+    }
+}
+
+#[napi(js_name = "FrostIdentity")]
+pub struct NativeFrostIdentity {
+    identity: Identity,
+}
+
+#[napi]
+impl NativeFrostIdentity {
+    #[napi(constructor)]
+    pub fn new(js_bytes: JsBuffer) -> Result<NativeFrostIdentity> {
+        let bytes = js_bytes.into_value()?;
+
+        let identity = Identity::deserialize_from(bytes.as_ref()).map_err(to_napi_err)?;
+
+        Ok(NativeFrostIdentity { identity })
+    }
+    #[napi]
+    pub fn from_hex(hex: String) -> Result<NativeFrostIdentity> {
+        let bytes: [u8; IDENTITY_LEN] = hex_to_bytes(&hex).map_err(to_napi_err)?;
+
+        let identity = Identity::deserialize_from(bytes.as_ref()).map_err(to_napi_err)?;
+
+        Ok(NativeFrostIdentity { identity })
+    }
+
+    #[napi]
+    pub fn serialize(&self) -> Result<Buffer> {
+        let mut vec: Vec<u8> = vec![];
+        self.identity
+            .serialize_into(&mut vec)
+            .map_err(to_napi_err)?;
+
+        Ok(Buffer::from(vec))
+    }
+    #[napi]
+    pub fn to_hex(&self) -> Result<String> {
+        let mut vec: Vec<u8> = vec![];
+        self.identity
+            .serialize_into(&mut vec)
+            .map_err(to_napi_err)?;
+
+        Ok(bytes_to_hex(&vec))
+    }
+
+    #[napi]
+    pub fn to_frost_identifier(&self) -> String {
+        let identifier: Identifier = self.identity.to_frost_identifier();
+
+        bytes_to_hex(&identifier.serialize())
+    }
 }

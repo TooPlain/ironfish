@@ -95,6 +95,19 @@ export class FishHashContext {
   prebuildDataset(threads: number): void
   hash(header: Buffer): Buffer
 }
+export type NativeFrostSecret = FrostSecret
+export class FrostSecret {
+  constructor()
+  toIdentity(): NativeFrostIdentity
+}
+export type NativeFrostIdentity = FrostIdentity
+export class FrostIdentity {
+  constructor(jsBytes: Buffer)
+  static fromHex(hex: string): FrostIdentity
+  serialize(): Buffer
+  toHex(): string
+  toFrostIdentifier(): string
+}
 export class BoxKeyPair {
   constructor()
   static fromHex(secretHex: string): BoxKeyPair
