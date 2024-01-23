@@ -23,7 +23,8 @@ import {
   MiningSetTargetMessage,
   MiningStatusMessage,
   MiningSubmitSchema,
-  MiningSubscribedMessage,
+  MiningSubscribedMessageV1,
+  MiningSubscribedMessageV2,
   MiningSubscribeSchema,
   StratumMessage,
   StratumMessageSchema,
@@ -211,6 +212,7 @@ export class StratumServer {
       }
 
       this.logger.debug(`Client ${client.id} sent ${header.result.method} message`)
+      console.log('MESSAGE:::::\n', header.result.body, '\n:::::')
 
       switch (header.result.method) {
         case 'mining.subscribe': {
@@ -233,6 +235,8 @@ export class StratumServer {
             return
           }
 
+          // TODO: Handle version max?
+
           if (!isValidPublicAddress(body.result.publicAddress)) {
             this.peers.ban(client, {
               message: `Invalid public address: ${body.result.publicAddress}`,
@@ -243,19 +247,31 @@ export class StratumServer {
           client.publicAddress = body.result.publicAddress
           client.name = body.result.name
           client.subscribed = true
+          client.version = body.result.version
           this.subscribed++
 
           const idHex = client.id.toString(16)
           const graffiti = `${this.pool.name}.${idHex}`
+          const extraNonce = ('00000' + idHex).slice(-5)
           Assert.isTrue(StringUtils.getByteLength(graffiti) <= GRAFFITI_SIZE)
           client.graffiti = GraffitiUtils.fromString(graffiti)
+          client.extraNonce = extraNonce
+
+          console.log('EXTRA NONCE:::', extraNonce)
 
           this.logger.info(`Miner ${idHex} connected (${this.subscribed} total)`)
 
-          this.send(client.socket, 'mining.subscribed', {
-            clientId: client.id,
-            graffiti: graffiti,
-          })
+          if (client.version === 2) {
+            this.send(client.socket, 'mining.subscribed', {
+              clientId: client.id,
+              xn: extraNonce,
+            })
+          } else {
+            this.send(client.socket, 'mining.subscribed', {
+              clientId: client.id,
+              graffiti: graffiti,
+            })
+          }
 
           this.send(client.socket, 'mining.set_target', this.getSetTargetMessage())
 
@@ -397,7 +413,8 @@ export class StratumServer {
   send(socket: net.Socket, method: 'mining.notify', body: MiningNotifyMessage): void
   send(socket: net.Socket, method: 'mining.disconnect', body: MiningDisconnectMessage): void
   send(socket: net.Socket, method: 'mining.set_target', body: MiningSetTargetMessage): void
-  send(socket: net.Socket, method: 'mining.subscribed', body: MiningSubscribedMessage): void
+  send(socket: net.Socket, method: 'mining.subscribed', body: MiningSubscribedMessageV1): void
+  send(socket: net.Socket, method: 'mining.subscribed', body: MiningSubscribedMessageV2): void
   send(socket: net.Socket, method: 'mining.wait_for_work'): void
   send(socket: net.Socket, method: 'mining.status', body: MiningStatusMessage): void
   send(socket: net.Socket, method: string, body?: unknown): void {

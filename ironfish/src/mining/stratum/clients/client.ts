@@ -19,8 +19,8 @@ import {
   MiningStatusMessage,
   MiningStatusSchema,
   MiningSubmitMessage,
-  MiningSubscribedMessage,
   MiningSubscribedMessageSchema,
+  MiningSubscribedMessageV1,
   MiningSubscribeMessage,
   MiningWaitForWorkMessage,
   MiningWaitForWorkSchema,
@@ -47,7 +47,7 @@ export abstract class StratumClient {
   private disconnectMessage: string | null = null
 
   readonly onConnected = new Event<[]>()
-  readonly onSubscribed = new Event<[MiningSubscribedMessage]>()
+  readonly onSubscribed = new Event<[MiningSubscribedMessageV1]>()
   readonly onSetTarget = new Event<[MiningSetTargetMessage]>()
   readonly onNotify = new Event<[MiningNotifyMessage]>()
   readonly onWaitForWork = new Event<[MiningWaitForWorkMessage]>()

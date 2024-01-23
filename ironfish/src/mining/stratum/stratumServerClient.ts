@@ -14,6 +14,8 @@ export class StratumServerClient {
   remoteAddress: string
   graffiti: Buffer | null = null
   messageBuffer: string
+  version: number | null = null
+  extraNonce: string | null = null
 
   private constructor(options: { socket: net.Socket; id: number }) {
     this.id = options.id

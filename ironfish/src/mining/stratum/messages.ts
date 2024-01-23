@@ -29,9 +29,14 @@ export type MiningSubmitMessage = {
   randomness: string
 }
 
-export type MiningSubscribedMessage = {
+export type MiningSubscribedMessageV1 = {
   clientId: number
   graffiti: string
+}
+
+export type MiningSubscribedMessageV2 = {
+  clientId: number
+  xn: string
 }
 
 export type MiningSetTargetMessage = {
@@ -84,7 +89,7 @@ export const MiningDisconnectMessageSchema: yup.ObjectSchema<MiningDisconnectMes
   })
   .optional()
 
-export const MiningSubscribedMessageSchema: yup.ObjectSchema<MiningSubscribedMessage> = yup
+export const MiningSubscribedMessageSchema: yup.ObjectSchema<MiningSubscribedMessageV1> = yup
   .object({
     clientId: yup.number().required(),
     graffiti: yup.string().required(),
