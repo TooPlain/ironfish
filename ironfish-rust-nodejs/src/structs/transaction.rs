@@ -4,9 +4,14 @@
 
 use std::cell::RefCell;
 
+use std::collections::{BTreeMap, HashMap};
 use std::convert::TryInto;
 
 use ironfish::assets::asset_identifier::AssetIdentifier;
+use ironfish::frost::keys::PublicKeyPackage;
+use ironfish::frost::round2::SignatureShare;
+use ironfish::frost::{Identifier, SigningPackage};
+use ironfish::serializing::{hex_to_bytes, hex_to_vec_bytes};
 use ironfish::transaction::unsigned::UnsignedTransaction;
 use ironfish::transaction::{
     batch_verify_transactions, TransactionVersion, TRANSACTION_EXPIRATION_SIZE,
@@ -393,6 +398,40 @@ impl NativeUnsignedTransaction {
     pub fn serialize(&self) -> Result<Buffer> {
         let mut vec: Vec<u8> = vec![];
         self.transaction.write(&mut vec).map_err(to_napi_err)?;
+
+        Ok(Buffer::from(vec))
+    }
+
+    #[napi]
+    pub fn sign_frost(
+        &mut self,
+        public_key_package_str: String,
+        signing_package_str: String,
+        signature_shares_map: HashMap<String, String>,
+    ) -> Result<Buffer> {
+        let public_key_package = PublicKeyPackage::deserialize(
+            &hex_to_vec_bytes(&public_key_package_str).map_err(to_napi_err)?,
+        )
+        .map_err(to_napi_err)?;
+        let authorizing_signing_package = SigningPackage::deserialize(
+            &hex_to_vec_bytes(&signing_package_str).map_err(to_napi_err)?,
+        )
+        .map_err(to_napi_err)?;
+        let mut authorizing_signature_shares = BTreeMap::<Identifier, SignatureShare>::new();
+        for (k, v) in signature_shares_map.iter() {
+            let identifier = Identifier::deserialize(&hex_to_bytes(k).map_err(to_napi_err)?)
+                .map_err(to_napi_err)?;
+            let signature_share =
+                SignatureShare::deserialize(hex_to_bytes(v).map_err(to_napi_err)?)
+                    .map_err(to_napi_err)?;
+            authorizing_signature_shares.insert(identifier, signature_share);
+        }
+
+        let transaction = self.transaction.sign_frost(
+            &public_key_package,
+            &authorizing_signing_package,
+            authorizing_signature_shares,
+        );
 
         Ok(Buffer::from(vec))
     }
