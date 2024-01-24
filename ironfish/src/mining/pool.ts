@@ -464,7 +464,6 @@ export class MiningPool {
     // It seems while debugging that it believes the target to be different
     // when the prevHash and newHash seems to be the same.
     this.logger.debug(`Prior Target: ${existingTarget}`)
-    this.logger.debug(`Recalculated Target: ${newTarget}`)
     this.logger.debug(`New Target as bigint ${newTarget.asBigInt()}`)
 
 
