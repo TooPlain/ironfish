@@ -459,6 +459,15 @@ export class MiningPool {
     const existingTarget = BigIntUtils.fromBytesBE(
       Buffer.from(latestBlock.header.target, 'hex'),
     )
+
+    // I am checking to see if there is a issue with this logic below
+    // It seems while debugging that it believes the target to be different
+    // when the prevHash and newHash seems to be the same.
+    this.logger.debug(`Prior Target: ${existingTarget}`)
+    this.logger.debug(`Recalculated Target: ${newTarget}`)
+    this.logger.debug(`New Target as bigint ${newTarget.asBigInt()}`)
+
+
     if (newTarget.asBigInt() === existingTarget) {
       this.logger.debug(
         `New target ${newTarget.asBigInt()} is the same as the existing target, no need to send out new work.`,
@@ -470,7 +479,7 @@ export class MiningPool {
     latestBlock.header.timestamp = newTime.getTime()
     this.distributeNewBlock(latestBlock)
 
-    this.logger.debug('target recalculated', { prevHash: latestBlock.header.previousBlockHash })
+    this.logger.debug('target recalculated', { prevHash: latestBlock.header.previousBlockHash})
   }
 
   private distributeNewBlock(newBlock: SerializedBlockTemplate) {
