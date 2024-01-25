@@ -347,8 +347,10 @@ export class StratumServer {
             })
             return
           }
-
-          this.send(client.socket, 'mining.status', await this.pool.getStatus(publicAddress))
+          const msg = await this.pool.getStatus(publicAddress)
+          this.send(client.socket, 'mining.status', msg)
+          this.logger.debug(`mining.status out ${msg}`)
+          
           break
         }
 
