@@ -217,6 +217,7 @@ export class StratumServer {
           const body = await YupUtils.tryValidate(MiningSubscribeSchema, header.result.body)
 
           if (body.error) {
+            this.logger.debug(`client error body ${client.agent}`)
             this.peers.ban(client, {
               message: body.error.message,
             })
@@ -255,18 +256,23 @@ export class StratumServer {
 
           const idHex = client.id.toString(16)
           const graffiti = `${this.pool.name}.${idHex}`
+          this.logger.debug(`client id: ${idHex}`)
+          this.logger.debug(`client graffiti before assert ${graffiti}`)
           Assert.isTrue(StringUtils.getByteLength(graffiti) <= GRAFFITI_SIZE)
           client.graffiti = GraffitiUtils.fromString(graffiti)
+          this.logger.debug(`client graffiti after assert ${client.graffiti}`)
           client.xn = ('00000000000000000000' + idHex).substr(-2 * this.config.config.xnSize)
 
           this.logger.info(`Miner ${idHex} connected (${this.subscribed} total)`)
 
           if (client.version === 1) {
+            this.logger.debug(`Client ${idHex} connect via v1`)
             this.send(client.socket, 'mining.subscribed', {
               clientId: client.id,
               graffiti: graffiti,
             })
           } else {
+            this.logger.debug(`Client ${idHex} connect via v2 or other`)
             this.send(client.socket, 'mining.subscribed', {
               clientId: client.id,
               xn: client.xn,
@@ -472,6 +478,7 @@ export class StratumServer {
       },
     }
     const serialized = JSON.stringify(msg) + '\n'
+    this.logger.debug(`SEND OUT: ${serialized}`)
     client.socket.write(serialized)
   }
 
