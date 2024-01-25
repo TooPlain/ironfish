@@ -220,8 +220,7 @@ export class StratumServer {
           const body = await YupUtils.tryValidate(MiningSubscribeSchema, header.result.body)
           
           if (body.error) {
-            const msg = await JSON.stringify(header.result.body)
-            this.logger.debug(`client error body ${msg}`)
+            this.logger.debug(`client error body`)
             this.peers.ban(client, {
               message: body.error.message,
             })
@@ -261,7 +260,6 @@ export class StratumServer {
           const idHex = client.id.toString(16)
           const graffiti = `${this.pool.name}.${idHex}`
           this.logger.debug(`client id: ${idHex}`)
-          this.logger.debug(`client graffiti before assert ${graffiti}`)
           Assert.isTrue(StringUtils.getByteLength(graffiti) <= GRAFFITI_SIZE)
           client.graffiti = GraffitiUtils.fromString(graffiti)
           this.logger.debug(`client graffiti after assert ${client.graffiti}`)
