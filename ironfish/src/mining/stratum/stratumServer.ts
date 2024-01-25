@@ -218,9 +218,10 @@ export class StratumServer {
       switch (header.result.method) {
         case 'mining.subscribe': {
           const body = await YupUtils.tryValidate(MiningSubscribeSchema, header.result.body)
-
+          
           if (body.error) {
-            this.logger.debug(`client error body`)
+            const msg = await JSON.stringify(header.result.body)
+            this.logger.debug(`client error body ${msg}`)
             this.peers.ban(client, {
               message: body.error.message,
             })
