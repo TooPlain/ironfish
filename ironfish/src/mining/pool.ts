@@ -459,15 +459,6 @@ export class MiningPool {
     const existingTarget = BigIntUtils.fromBytesBE(
       Buffer.from(latestBlock.header.target, 'hex'),
     )
-    newTarget.targetValue
-
-    // I am checking to see if there is a issue with this logic below
-    // It seems while debugging that it believes the target to be different
-    // when the prevHash and newHash seems to be the same. I maybe very wrong lol
-    this.logger.debug(`Prior Target: ${existingTarget}`)
-    this.logger.debug(`New Target as bigint ${newTarget.asBigInt()}`)
-    this.logger.debug(`newTarget.targetValue ${newTarget.targetValue}`)
-
 
     if (newTarget.asBigInt() === existingTarget) {
       this.logger.debug(
