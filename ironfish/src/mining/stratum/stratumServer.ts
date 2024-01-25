@@ -459,7 +459,7 @@ export class StratumServer {
     }
 
     const serialized = JSON.stringify(message) + '\n'
-    this.logger.warn(`SEND OUT: ${serialized}`)
+    this.logger.debug(`SEND OUT: ${serialized}`)
     socket.write(serialized)
   }
 
