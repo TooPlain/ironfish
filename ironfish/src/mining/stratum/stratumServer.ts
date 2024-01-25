@@ -198,7 +198,7 @@ export class StratumServer {
     const splits = client.messageBuffer.substring(0, lastDelimiterIndex).trim().split('\n')
     client.messageBuffer = client.messageBuffer.substring(lastDelimiterIndex + 1)
 
-    this.logger.debug(client.messageBuffer)
+    this.logger.debug(client.messageBuffer.toString())
 
     for (const split of splits) {
       const payload: unknown = JSON.parse(split)
