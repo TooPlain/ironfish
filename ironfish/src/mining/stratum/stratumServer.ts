@@ -198,7 +198,6 @@ export class StratumServer {
     const splits = client.messageBuffer.substring(0, lastDelimiterIndex).trim().split('\n')
     client.messageBuffer = client.messageBuffer.substring(lastDelimiterIndex + 1)
 
-    this.logger.debug(client.messageBuffer.toString())
 
     for (const split of splits) {
       const payload: unknown = JSON.parse(split)
@@ -213,14 +212,14 @@ export class StratumServer {
       }
 
       this.logger.debug(`Client ${client.id} sent ${header.result.method} message`)
-
+      this.logger.debug(`Client ${client.id} sent body ${header.result.body}`)
       switch (header.result.method) {
         case 'mining.subscribe': {
           this.logger.debug(JSON.stringify(header.result.body))
           const body = await YupUtils.tryValidate(MiningSubscribeSchema, header.result.body)
 
           if (body.error) {
-            this.logger.debug(`client error body ${client.agent}`)
+            this.logger.debug(`client error body`)
             this.peers.ban(client, {
               message: body.error.message,
             })
