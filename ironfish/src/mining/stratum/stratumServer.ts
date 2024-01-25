@@ -226,6 +226,7 @@ export class StratumServer {
           if (body.result.version < this.versionMin) {
             const msg = `Client version ${body.result.version} does not meet minimum version ${this.versionMin}`
             this.sendStratumError(client, header.result.id, msg)
+            this.logger.debug(`sub err ${msg}`)
             this.peers.ban(client, {
               message: msg,
               reason: DisconnectReason.BAD_VERSION,
@@ -238,6 +239,7 @@ export class StratumServer {
           if (!isValidPublicAddress(body.result.publicAddress)) {
             const msg = `Invalid public address: ${body.result.publicAddress}`
             this.sendStratumError(client, header.result.id, msg)
+            this.logger.debug(`add err ${msg}`)
             this.peers.ban(client, {
               message: msg,
             })
@@ -350,7 +352,7 @@ export class StratumServer {
           const msg = await this.pool.getStatus(publicAddress)
           this.send(client.socket, 'mining.status', msg)
           this.logger.debug(`mining.status out ${msg}`)
-          
+
           break
         }
 
@@ -457,6 +459,7 @@ export class StratumServer {
     }
 
     const serialized = JSON.stringify(message) + '\n'
+    this.logger.debug(serialized)
     socket.write(serialized)
   }
 
